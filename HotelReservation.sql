@@ -1,0 +1,215 @@
+DROP DATABASE IF EXISTS HotelReservation;
+
+CREATE DATABASE HotelReservation;
+
+USE HotelReservation;
+
+-- Room Information
+
+CREATE TABLE Room
+(
+	RoomID INT NOT NULL AUTO_INCREMENT,
+	`Number` INT NOT NULL,
+	Floor INT NOT NULL,
+	OccupancyLimit INT NOT NULL,
+	RoomTypeID INT NOT NULL,
+	PRIMARY KEY (RoomID)
+);
+
+CREATE TABLE RoomType
+(
+	RoomTypeID INT NOT NULL AUTO_INCREMENT,
+	`Name` VARCHAR(45) NOT NULL,
+	PRIMARY KEY (RoomTypeID)
+);
+
+CREATE TABLE Amenity
+(
+	AmenityID INT NOT NULL AUTO_INCREMENT,
+	`Name` VARCHAR(45) NOT NULL,
+	PRIMARY KEY (AmenityID)
+);
+
+CREATE TABLE RoomAmenity
+(
+	RoomID INT NOT NULL,
+	AmenityID INT NOT NULL,
+	PRIMARY KEY (RoomID, AmenityID)
+);
+
+ALTER TABLE Room
+ADD CONSTRAINT fk_Room_RoomType
+FOREIGN KEY (RoomTypeID) REFERENCES RoomType(RoomTypeID) ON DELETE NO ACTION;
+
+ALTER TABLE RoomAmenity
+ADD CONSTRAINT fk_RoomAmenity_Room
+FOREIGN KEY (RoomID) REFERENCES Room(RoomID) ON DELETE NO ACTION;
+
+ALTER TABLE RoomAmenity
+ADD CONSTRAINT fk_RoomAmenity_Amenity
+FOREIGN KEY (AmenityID) REFERENCES Amenity(AmenityID) ON DELETE NO ACTION;
+
+-- Customer Reservation
+
+CREATE TABLE Customer
+(
+	CustomerID INT NOT NULL AUTO_INCREMENT,
+	Phone VARCHAR(20) NOT NULL,
+	Email VARCHAR(30) NOT NULL,
+	GuestID INT NOT NULL,
+	PRIMARY KEY (CustomerID)
+);
+
+CREATE TABLE Guest
+(
+	GuestID INT NOT NULL AUTO_INCREMENT,
+	FirstName VARCHAR(20) NOT NULL,
+	LastName VARCHAR(30) NOT NULL,
+	Birthday DATE NOT NULL,
+	PRIMARY KEY (GuestID)
+);
+
+CREATE TABLE Reservation
+(
+	ReservationID INT NOT NULL AUTO_INCREMENT,
+	StartDate DATE NOT NULL,
+	EndDate DATE NOT NULL,
+	CustomerID INT NOT NULL,
+	PRIMARY KEY (ReservationID)
+);
+
+CREATE TABLE ReservationRoom
+(
+	ReservationID INT NOT NULL,
+	RoomID INT NOT NULL,
+	PRIMARY KEY(ReservationID, RoomID)
+);
+
+CREATE TABLE ReservationGuest
+(
+	ReservationID INT NOT NULL,
+	GuestID INT NOT NULL,
+	PRIMARY KEY(ReservationID, GuestID)
+);
+
+ALTER TABLE Customer
+ADD CONSTRAINT fk_Customer_Guest
+FOREIGN KEY (GuestID) REFERENCES Guest(GuestID) ON DELETE NO ACTION;
+
+ALTER TABLE Reservation
+ADD CONSTRAINT fk_Reservation_Customer
+FOREIGN KEY (CustomerID) REFERENCES Customer(CustomerID) ON DELETE NO ACTION;
+
+ALTER TABLE ReservationRoom
+ADD CONSTRAINT fk_ReservationRoom_Reservation
+FOREIGN KEY (ReservationID) REFERENCES Reservation(ReservationID) ON DELETE NO ACTION;
+
+ALTER TABLE ReservationRoom
+ADD CONSTRAINT fk_ReservationRoom_Room
+FOREIGN KEY (RoomID) REFERENCES Room(RoomID) ON DELETE NO ACTION;
+
+ALTER TABLE ReservationGuest
+ADD CONSTRAINT fk_ReservationGuest_Reservation
+FOREIGN KEY (ReservationID) REFERENCES Reservation(ReservationID) ON DELETE NO ACTION;
+
+ALTER TABLE ReservationGuest
+ADD CONSTRAINT fk_ReservationGuest_Guest
+FOREIGN KEY (GuestID) REFERENCES Guest(GuestID) ON DELETE NO ACTION;
+
+-- Room Rates
+
+CREATE TABLE RoomRate
+(
+	RoomRateID INT NOT NULL AUTO_INCREMENT,
+	StartDate DATE NOT NULL,
+	EndDate DATE NOT NULL,
+	Rate DECIMAL(7,2) NOT NULL,
+	RoomTypeID INT NOT NULL,
+	PRIMARY KEY (RoomRateID)
+);
+
+ALTER TABLE RoomRate
+ADD CONSTRAINT fk_RoomRate_RoomType
+FOREIGN KEY (RoomTypeID) REFERENCES RoomType(RoomTypeID) ON DELETE NO ACTION;
+
+-- Add-ons
+
+CREATE TABLE AddOn
+(
+	AddOnID INT NOT NULL AUTO_INCREMENT,
+	`Name` VARCHAR(45) NOT NULL,
+	PRIMARY KEY (AddOnID)
+);
+
+CREATE TABLE AddOnPrice
+(
+	AddOnPriceID INT NOT NULL AUTO_INCREMENT,
+	StartDate DATE NOT NULL,
+	EndDate DATE NOT NULL,
+	Price DECIMAL(7,2) NOT NULL,
+	AddOnID INT NOT NULL,
+	PRIMARY KEY (AddOnPriceID)
+);
+
+ALTER TABLE AddOnPrice
+ADD CONSTRAINT fk_AddOnPrice_AddOn
+FOREIGN KEY (AddOnID) REFERENCES AddOn(AddOnID) ON DELETE NO ACTION;
+
+-- Billing
+
+CREATE TABLE Bill
+(
+	BillID INT NOT NULL AUTO_INCREMENT,
+	PreTaxTotal DECIMAL(10,2) NOT NULL,
+	TaxTotal DECIMAL(7,2) NOT NULL,
+	ReservationID INT NOT NULL,
+	PRIMARY KEY (BillID)
+);
+
+CREATE TABLE BillDetails
+(
+	BillDetailsID INT NOT NULL AUTO_INCREMENT,
+	Date DATE NOT NULL,
+	AddOnID INT NOT NULL,
+	BillID INT NOT NULL,
+	PRIMARY KEY (BillDetailsID)
+);
+
+ALTER TABLE Bill
+ADD CONSTRAINT fk_Bill_Reservation
+FOREIGN KEY (ReservationID) REFERENCES Reservation(ReservationID) ON DELETE NO ACTION;
+
+ALTER TABLE BillDetails
+ADD CONSTRAINT fk_BillDetails_AddOn
+FOREIGN KEY (AddOnID) REFERENCES AddOn(AddOnID) ON DELETE NO ACTION;
+
+ALTER TABLE BillDetails
+ADD CONSTRAINT fk_BillDetails_Bill
+FOREIGN KEY (BillID) REFERENCES Bill(BillID) ON DELETE NO ACTION;
+
+-- Promotion Codes
+
+CREATE TABLE PromotionCode
+(
+	PromotionCodeID INT NOT NULL AUTO_INCREMENT,
+	StartDate DATE NOT NULL,
+	EndDate DATE NOT NULL,
+	PercentageDiscount DECIMAL(5,4) NULL,
+	FlatDiscount DECIMAL(7,2) NULL,
+	PRIMARY KEY (PromotionCodeID)
+);
+
+CREATE TABLE ReservationPromotionCode
+(
+	ReservationID INT NOT NULL,
+	PromotionCodeID INT NOT NULL,
+	PRIMARY KEY(ReservationID, PromotionCodeID)
+);
+
+ALTER TABLE ReservationPromotionCode
+ADD CONSTRAINT fk_ReservationPromotionCode_Reservation
+FOREIGN KEY (ReservationID) REFERENCES Reservation(ReservationID) ON DELETE NO ACTION;
+
+ALTER TABLE ReservationPromotionCode
+ADD CONSTRAINT fk_ReservationPromotionCode_PromotionCode
+FOREIGN KEY (PromotionCodeID) REFERENCES PromotionCode(PromotionCodeID) ON DELETE NO ACTION;
